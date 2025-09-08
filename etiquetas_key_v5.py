@@ -91,7 +91,7 @@ class EtiquetasApp:
             self.impressora_etiquetas = selecionada
             self.lbl_impressora.config(text=selecionada)
             self.salvar_configuracao(self.lbl_arquivo.cget("text"))
-            messagebox.showinfo("Impressora Selecionada", f"Impressora '{selecionada}' salva com sucesso.")
+            ##messagebox.showinfo("Impressora Selecionada", f"Impressora '{selecionada}' salva com sucesso.")
             janela.destroy()
 
         btn_confirmar = tk.Button(janela, text="Confirmar", command=confirmar, font=self.fonte_padrao, bg="#4CAF50", fg="white")
