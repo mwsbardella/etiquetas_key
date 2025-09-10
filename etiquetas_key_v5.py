@@ -73,11 +73,12 @@ class EtiquetasApp:
 
     def selecionar_impressora(self):
         impressoras = [p[2] for p in win32print.EnumPrinters(5)]
+        impressoras = impressoras + [p[2] for p in win32print.EnumPrinters(2)]
 
         # Janela de seleção
         janela = tk.Toplevel(self.root)
         janela.title("Selecionar Impressora")
-        janela.geometry("400x120")
+        janela.geometry("800x120")
         janela.resizable(False, False)
 
         tk.Label(janela, text="Escolha a impressora:", font=self.fonte_padrao).pack(pady=10)
