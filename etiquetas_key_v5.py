@@ -72,7 +72,7 @@ class EtiquetasApp:
             self.log_error(f"[ERRO] Ao salvar configuração: {e}", e)
 
     def selecionar_impressora(self):
-        impressoras = [p[2] for p in win32print.EnumPrinters(4)]
+        impressoras = [p[2] for p in win32print.EnumPrinters(5)]
 
         # Janela de seleção
         janela = tk.Toplevel(self.root)
