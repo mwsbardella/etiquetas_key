@@ -72,18 +72,19 @@ class EtiquetasApp:
             self.log_error(f"[ERRO] Ao salvar configuração: {e}", e)
 
     def selecionar_impressora(self):
-        impressoras = [p[2] for p in win32print.EnumPrinters(2)]
+        impressoras = [p[2] for p in win32print.EnumPrinters(5)]
+        impressoras = impressoras + [p[2] for p in win32print.EnumPrinters(2)]
 
         # Janela de seleção
         janela = tk.Toplevel(self.root)
         janela.title("Selecionar Impressora")
-        janela.geometry("400x120")
+        janela.geometry("600x120")
         janela.resizable(False, False)
 
-        tk.Label(janela, text="Escolha a impressora:", font=self.fonte_padrao).pack(pady=10)
+        tk.Label(janela, text="Escolha a impressora:", font=self.fonte_padrao).pack(pady=20)
 
-        combo = ttk.Combobox(janela, values=impressoras, font=self.fonte_padrao, state="readonly")
-        combo.pack(pady=5)
+        combo = ttk.Combobox(janela, values=impressoras, font=self.fonte_padrao, state="readonly", width=60)
+        combo.pack(pady=3)
         combo.set(self.impressora_etiquetas or win32print.GetDefaultPrinter())
 
         def confirmar():
@@ -91,7 +92,7 @@ class EtiquetasApp:
             self.impressora_etiquetas = selecionada
             self.lbl_impressora.config(text=selecionada)
             self.salvar_configuracao(self.lbl_arquivo.cget("text"))
-            messagebox.showinfo("Impressora Selecionada", f"Impressora '{selecionada}' salva com sucesso.")
+            ##messagebox.showinfo("Impressora Selecionada", f"Impressora '{selecionada}' salva com sucesso.")
             janela.destroy()
 
         btn_confirmar = tk.Button(janela, text="Confirmar", command=confirmar, font=self.fonte_padrao, bg="#4CAF50", fg="white")
@@ -900,47 +901,39 @@ class EtiquetasApp:
         blocos = []
         i = 0
         while i < len(etiquetas):
-            item1 = etiquetas[i]
-            linha1, linha2, ref1 = self.formatar_nome(item1["descricao"], item1["referencia"])
-            cod1 = item1["codigo"]
-            
-            epl = f"""
+            epl = """
 N
 q720
 Q240
 S2
 D15
-B32,16,0,1,3,5,80,B,"{cod1}"
-A38,130,0,4,1,1,N,"{linha1}"
-A38,155,0,4,1,1,N,"{linha2}"
-A38,180,0,4,1,1,N,"{ref1}"
 """
             
+            # Primeira coluna (sempre existe)
+            item1 = etiquetas[i]
+            linha1, linha2, ref1 = self.formatar_nome(item1["descricao"], item1["referencia"])
+            cod1 = item1["codigo"]
+            
+            epl += f'B32,16,0,1,3,5,80,B,"{cod1}"\n'
+            epl += f'A38,130,0,4,1,1,N,"{linha1}"\n'
+            epl += f'A38,155,0,4,1,1,N,"{linha2}"\n'
+            epl += f'A38,180,0,4,1,1,N,"{ref1}"\n'
+            
+            # Segunda coluna (se existir)
             if i + 1 < len(etiquetas):
                 item2 = etiquetas[i + 1]
                 linha1_2, linha2_2, ref2 = self.formatar_nome(item2["descricao"], item2["referencia"])
                 cod2 = item2["codigo"]
-                epl += f"""
-B388,16,0,1,3,5,80,B,"{cod2}"
-A388,130,0,4,1,1,N,"{linha1_2}"
-A388,155,0,4,1,1,N,"{linha2_2}"
-A388,180,0,4,1,1,N,"{ref2}"
-"""
-            
-            if i + 2 < len(etiquetas):
-                item3 = etiquetas[i + 2]
-                linha1_3, linha2_3, ref3 = self.formatar_nome(item3["descricao"], item3["referencia"])
-                cod3 = item3["codigo"]
-                epl += f"""
-B744,16,0,1,3,5,80,B,"{cod3}"
-A744,130,0,4,1,1,N,"{linha1_3}"
-A744,155,0,4,1,1,N,"{linha2_3}"
-A744,180,0,4,1,1,N,"{ref3}"
-"""
+                
+                # Posição X para segunda coluna (388 em vez de 744 para 2 colunas)
+                epl += f'B388,16,0,1,3,5,80,B,"{cod2}"\n'
+                epl += f'A388,130,0,4,1,1,N,"{linha1_2}"\n'
+                epl += f'A388,155,0,4,1,1,N,"{linha2_2}"\n'
+                epl += f'A388,180,0,4,1,1,N,"{ref2}"\n'
             
             epl += "P1\n"
             blocos.append(epl)
-            i += 3
+            i += 2  # Avança 2 posições (2 colunas)
         
         return "".join(blocos)
     
