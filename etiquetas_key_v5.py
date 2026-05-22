@@ -875,9 +875,23 @@ class EtiquetasApp:
             error_msg = f"Erro ao imprimir fila:\n{str(e)}"
             self.log_error(error_msg, e)
     
+    def sanitizar_texto_epl(self, texto):
+        """Remove caracteres problemáticos para EPL"""
+        if not texto:
+            return ""
+        
+        # Remover caracteres que causam problemas no EPL
+        caracteres_problematicos = ['"', "'", '\n', '\r', '\t', '\\']
+        for char in caracteres_problematicos:
+            texto = texto.replace(char, ' ')
+        
+        # Remover espaços extras e truncar se necessário
+        texto = ' '.join(texto.split())
+        return texto
+
     def formatar_nome(self, nome, referencia):
-        nome = nome.strip().replace('\n', ' ') if nome else ""
-        referencia = referencia.strip() if referencia else ""
+        nome = self.sanitizar_texto_epl(nome) if nome else ""
+        referencia = self.sanitizar_texto_epl(referencia) if referencia else ""
         
         palavras = nome.split()
         linha1 = []
@@ -891,15 +905,18 @@ class EtiquetasApp:
             else:
                 linha2.append(palavra)
         
-        linha1 = ' '.join(linha1)[:18] if linha1 else ""
-        linha2 = ' '.join(linha2)[:18] if linha2 else ""
-        ref_formatada = referencia[:12] if referencia else ""
+        linha1 = ' '.join(linha1)[:23] if linha1 else ""
+        linha2 = ' '.join(linha2)[:23] if linha2 else ""
+        ref_formatada = referencia[:17] if referencia else ""
         
         return linha1, linha2, ref_formatada
         
     def gerar_epl(self, etiquetas):
         blocos = []
         i = 0
+
+        offset_x = 15  # ajuste horizontal (move tudo pra direita)
+
         while i < len(etiquetas):
             epl = """
 N
@@ -908,16 +925,16 @@ Q240
 S2
 D15
 """
-            
+        
             # Primeira coluna (sempre existe)
             item1 = etiquetas[i]
             linha1, linha2, ref1 = self.formatar_nome(item1["descricao"], item1["referencia"])
             cod1 = item1["codigo"]
             
-            epl += f'B32,16,0,1,3,5,80,B,"{cod1}"\n'
-            epl += f'A38,130,0,4,1,1,N,"{linha1}"\n'
-            epl += f'A38,155,0,4,1,1,N,"{linha2}"\n'
-            epl += f'A38,180,0,4,1,1,N,"{ref1}"\n'
+            epl += f'B{32+offset_x},16,0,1,3,5,80,B,"{cod1}"\n'
+            epl += f'A{38+offset_x},130,0,2,1,1,N,"{linha1}"\n'
+            epl += f'A{38+offset_x},155,0,2,1,1,N,"{linha2}"\n'
+            epl += f'A{38+offset_x},180,0,4,1,1,N,"{ref1}"\n'
             
             # Segunda coluna (se existir)
             if i + 1 < len(etiquetas):
@@ -925,11 +942,10 @@ D15
                 linha1_2, linha2_2, ref2 = self.formatar_nome(item2["descricao"], item2["referencia"])
                 cod2 = item2["codigo"]
                 
-                # Posição X para segunda coluna (388 em vez de 744 para 2 colunas)
-                epl += f'B388,16,0,1,3,5,80,B,"{cod2}"\n'
-                epl += f'A388,130,0,4,1,1,N,"{linha1_2}"\n'
-                epl += f'A388,155,0,4,1,1,N,"{linha2_2}"\n'
-                epl += f'A388,180,0,4,1,1,N,"{ref2}"\n'
+                epl += f'B{388+offset_x},16,0,1,3,5,80,B,"{cod2}"\n'
+                epl += f'A{388+offset_x},130,0,2,1,1,N,"{linha1_2}"\n'
+                epl += f'A{388+offset_x},155,0,2,1,1,N,"{linha2_2}"\n'
+                epl += f'A{388+offset_x},180,0,4,1,1,N,"{ref2}"\n'
             
             epl += "P1\n"
             blocos.append(epl)

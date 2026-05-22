@@ -1,0 +1,23 @@
+# Configuração local (contém dados sensíveis: caminho do banco e impressora)
+config.json
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Nuitka build
+*.build/
+*.dist/
+*.onefile-build/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.user
