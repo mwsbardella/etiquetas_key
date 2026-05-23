@@ -51,6 +51,16 @@ O projeto usa **Nuitka** para compilar o Python em código nativo, o que evita f
 - [Nuitka](https://nuitka.net) — `pip install nuitka`
 - Visual Studio Build Tools com "Desenvolvimento para desktop com C++" ([download](https://visualstudio.microsoft.com/visual-cpp-build-tools/))
 
+### Gerar o ícone
+
+O ícone é gerado por um script Python (requer Pillow):
+
+```bash
+python gerar_icone.py
+```
+
+Isso cria `icone.ico` com 7 resoluções (16 até 256 px).
+
 ### Comando de build
 
 Execute dentro da pasta do projeto:
@@ -63,6 +73,7 @@ python -m nuitka ^
     --include-package=fdb ^
     --include-package=firebird ^
     --include-data-files=config.json=config.json ^
+    --windows-icon-from-ico=icone.ico ^
     --output-filename=EtiquetasApp.exe ^
     --output-dir=dist ^
     etiquetas_key_v5.py

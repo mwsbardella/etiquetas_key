@@ -1,3 +1,4 @@
 fdb>=2.0
 pywin32>=311
 nuitka>=2.0
+pillow>=10.0
