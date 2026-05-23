@@ -145,10 +145,14 @@ class EtiquetasApp:
         self.entry_desc.grid(row=0, column=5, padx=5)
         self.entry_desc.bind('<Return>', lambda event: self.pesquisar())
         
-        self.btn_pesquisar = tk.Button(frame_busca, text="Pesquisar", command=self.pesquisar, 
+        self.btn_pesquisar = tk.Button(frame_busca, text="Pesquisar", command=self.pesquisar,
                                      font=self.fonte_padrao, state=tk.NORMAL)
         self.btn_pesquisar.grid(row=0, column=6, padx=5)
-        
+
+        btn_importar_txt = tk.Button(frame_busca, text="Importar TXT", command=self.importar_txt,
+                                     font=self.fonte_padrao, bg="#9C27B0", fg="white")
+        btn_importar_txt.grid(row=0, column=7, padx=5)
+
         # Frame de resultados
         self.frame_resultados = tk.Frame(self.root)
         self.frame_resultados.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
@@ -380,6 +384,92 @@ class EtiquetasApp:
             self.log_error(error_msg, e)
             self.bloquear_controles_pesquisa(False)
             self.pesquisa_em_andamento = False
+
+    def importar_txt(self):
+        caminho_db = self.lbl_arquivo.cget("text")
+        if caminho_db == "Nenhum arquivo selecionado":
+            messagebox.showwarning("Aviso", "Selecione um banco de dados primeiro")
+            return
+
+        caminho_txt = filedialog.askopenfilename(
+            filetypes=[("Arquivo de texto", "*.txt"), ("Todos os arquivos", "*.*")],
+            title="Selecione o arquivo TXT com os códigos"
+        )
+        if not caminho_txt:
+            return
+
+        # Parsear o arquivo TXT: cada linha é "codigo" ou "codigo,quantidade"
+        itens_importados = {}  # codigo -> quantidade (soma se aparecer mais de uma vez)
+        for encoding in ('utf-8-sig', 'latin-1'):
+            try:
+                with open(caminho_txt, 'r', encoding=encoding) as f:
+                    for linha in f:
+                        linha = linha.strip()
+                        if not linha:
+                            continue
+                        partes = linha.split(',')
+                        codigo = partes[0].strip().upper()
+                        if not codigo:
+                            continue
+                        try:
+                            quantidade = max(1, int(partes[1].strip())) if len(partes) >= 2 else 1
+                        except ValueError:
+                            quantidade = 1
+                        itens_importados[codigo] = itens_importados.get(codigo, 0) + quantidade
+                break
+            except UnicodeDecodeError:
+                continue
+
+        if not itens_importados:
+            messagebox.showwarning("Aviso", "Nenhum código encontrado no arquivo")
+            return
+
+        conexao = self.conectar_firebird(caminho_db)
+        if not conexao:
+            return
+
+        try:
+            cursor = conexao.cursor()
+            codigos = list(itens_importados.keys())
+            placeholders = ', '.join(['?' for _ in codigos])
+            sql = f"""SELECT p.id_produto, p.descricao, p.referencia
+                      FROM produto p
+                      WHERE p.id_produto IN ({placeholders})
+                      ORDER BY p.id_produto"""
+            cursor.execute(sql, codigos)
+            encontrados = cursor.fetchall()
+
+            if not encontrados:
+                messagebox.showinfo("Informação", "Nenhum produto encontrado para os códigos informados")
+                return
+
+            codigos_encontrados = set()
+            resultados = []
+            for row in encontrados:
+                codigo, descricao, referencia = str(row[0]).upper(), row[1], row[2]
+                codigos_encontrados.add(codigo)
+                resultados.append((row[0], descricao, referencia, itens_importados.get(codigo, 1)))
+
+            for widget in self.scrollable_frame.winfo_children():
+                widget.destroy()
+            self.selecionados = []
+
+            self.criar_lista_resultados(resultados)
+
+            nao_encontrados = set(codigos) - codigos_encontrados
+            msg_status = f"Importados {len(resultados)} produtos de {len(codigos)} códigos."
+            self.status_bar.config(text=msg_status)
+
+            if nao_encontrados:
+                messagebox.showwarning(
+                    "Códigos não encontrados",
+                    f"Os seguintes códigos não foram encontrados no banco:\n{', '.join(sorted(nao_encontrados))}"
+                )
+
+        except Exception as e:
+            self.log_error(f"Erro ao consultar o banco de dados:\n{str(e)}", e)
+        finally:
+            conexao.close()
 
     def selecionar_nota(self, notas):
         """Abre uma janela para o usuário selecionar qual nota deseja visualizar"""
