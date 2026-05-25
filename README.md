@@ -67,36 +67,45 @@ Execute dentro da pasta do projeto:
 
 ```bash
 python -m nuitka ^
-    --onefile ^
+    --standalone ^
     --windows-console-mode=disable ^
     --enable-plugin=tk-inter ^
     --include-package=fdb ^
     --include-package=firebird ^
-    --include-data-files=config.json=config.json ^
     --windows-icon-from-ico=icone.ico ^
+    --windows-company-name="EtiquetasKey" ^
+    --windows-product-name="Sistema de Impressao de Etiquetas" ^
+    --windows-file-version=5.0.0.0 ^
+    --windows-product-version=5.0.0.0 ^
+    --windows-file-description="Sistema de Impressao de Etiquetas" ^
     --output-filename=EtiquetasApp.exe ^
     --output-dir=dist ^
     etiquetas_key_v5.py
 ```
 
-> **Nota:** `config.json` precisa existir na pasta para ser embutido no executável. Crie-o a partir do `config.template.json` antes de buildar.
+> **Nota:** O `config.json` é salvo automaticamente na mesma pasta do `.exe` ao configurar banco e impressora pela interface. Não é necessário embutir o arquivo no build.
 
 ### Parâmetros explicados
 
 | Parâmetro | Descrição |
 |---|---|
-| `--onefile` | Gera um único `.exe` autocontido |
+| `--standalone` | Gera uma pasta autocontida (menos suspeito para antivírus que `--onefile`) |
 | `--windows-console-mode=disable` | Remove a janela de console (modo GUI) |
 | `--enable-plugin=tk-inter` | Inclui o Tkinter e dependências Tcl/Tk |
 | `--include-package=fdb` | Inclui o driver Firebird |
 | `--include-package=firebird` | Inclui dependências do fdb |
-| `--include-data-files=...` | Embute o `config.json` no executável |
+| `--windows-company-name` / `--windows-product-name` | Metadados do exe (reduzem falsos positivos em antivírus) |
+| `--windows-file-version` | Versão do arquivo incorporada nos metadados do exe |
+
+### Por que `--standalone` em vez de `--onefile`?
+
+O modo `--onefile` gera um único `.exe` que se auto-extrai no `%TEMP%` a cada execução — comportamento idêntico ao de malware, por isso é constantemente flagrado por antivírus. O modo `--standalone` cria uma pasta com o executável e seus arquivos de suporte, sem extração em tempo de execução.
 
 ### Resultado
 
-O executável é gerado em `dist\EtiquetasApp.exe` (~11 MB).
+Gerado em `dist\EtiquetasApp.exe.dist\` (~pasta com dependências).
 
-Na primeira execução, o `config.json` é extraído para a pasta do `.exe`. As configurações de banco e impressora são salvas automaticamente pela interface.
+Distribua a pasta inteira. As configurações de banco e impressora são salvas em `config.json` na mesma pasta do `.exe`.
 
 ## Estrutura do projeto
 

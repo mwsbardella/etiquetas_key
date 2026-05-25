@@ -6,6 +6,7 @@ import sys
 import traceback
 import json
 import os
+import unicodedata
 
 class EtiquetasApp:
     def __init__(self, root):
@@ -20,7 +21,8 @@ class EtiquetasApp:
         self.fila_impressao = []
         self.fonte_padrao = ('Arial', 10)
         self.fonte_titulo = ('Arial', 12, 'bold')
-        self.config_file = "config.json"
+        exe_dir = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else os.path.abspath(__file__))
+        self.config_file = os.path.join(exe_dir, "config.json")
         self.pesquisa_em_andamento = False
         
         # Configurar interface
@@ -966,16 +968,19 @@ class EtiquetasApp:
             self.log_error(error_msg, e)
     
     def sanitizar_texto_epl(self, texto):
-        """Remove caracteres problemáticos para EPL"""
+        """Remove acentos e caracteres problemáticos para EPL"""
         if not texto:
             return ""
-        
+
+        # Normalizar unicode e remover marcas de acento (NFD decompõe, Mn = combining marks)
+        texto = unicodedata.normalize('NFD', texto)
+        texto = ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
+        texto = texto.encode('ascii', errors='ignore').decode('ascii')
+
         # Remover caracteres que causam problemas no EPL
-        caracteres_problematicos = ['"', "'", '\n', '\r', '\t', '\\']
-        for char in caracteres_problematicos:
+        for char in ['"', "'", '\n', '\r', '\t', '\\']:
             texto = texto.replace(char, ' ')
-        
-        # Remover espaços extras e truncar se necessário
+
         texto = ' '.join(texto.split())
         return texto
 
